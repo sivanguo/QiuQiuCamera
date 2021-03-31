@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">球球</string>
+    <string name="video">视频</string>
+    <string name="photo">照片</string>
+    <string name="human">人像</string>
+    <string name="night">夜景</string>
+</resources>
