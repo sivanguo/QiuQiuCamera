@@ -55,6 +55,15 @@
             android:textSize="100dp"
             android:paddingLeft="50dp"
             />
+        <ImageButton
+            android:id="@+id/settings"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@mipmap/settings"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="100dp"
+            />
+
 
 
         <RelativeLayout

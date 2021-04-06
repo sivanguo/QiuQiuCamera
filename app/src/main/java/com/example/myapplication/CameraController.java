@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -23,9 +24,14 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaMetadata;
 import android.media.MediaRecorder;
+import android.media.ThumbnailUtils;
+import android.net.Uri;
+import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.StrictMode;
+import android.provider.MediaStore;
 import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
@@ -36,6 +42,7 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -66,7 +73,16 @@ public class CameraController {
     private Status status;
     private ImageButton previve;
     private Bitmap compressBitmap;
+    private boolean  WmFlag=true;
+    private CaptureRequest.Builder captureRequestBuilder2;
 
+    public boolean isWmFlag() {
+        return WmFlag;
+    }
+
+    public void setWmFlag(boolean wmFlag) {
+        WmFlag = wmFlag;
+    }
 
     public CameraController(MainActivity activity, AutoFitTextureView mPreviewView, Status status, ImageButton preview) {
         this.mPreviewView = mPreviewView;
@@ -93,7 +109,7 @@ public class CameraController {
     }
 
     public void beginTackPicture() {
-        CaptureRequest.Builder captureRequestBuilder2 = null;
+        captureRequestBuilder2 = null;
         mFile = new File(Environment.getExternalStorageDirectory(), "DCIM/Camera/" + System.currentTimeMillis() + ".jpg");
         try {System.out.println(mCameraDevice+"--------------------------------------------------------");
             captureRequestBuilder2 = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
@@ -340,7 +356,7 @@ public class CameraController {
         compressbySample(bytes);
         try {
             outputStream = new FileOutputStream(mFile);
-            if (false){
+            if (WmFlag==false){
                 outputStream.write(bytes);
             }else {
                 addWaterMark(bytes).compress(Bitmap.CompressFormat.JPEG,100,outputStream);
@@ -432,11 +448,15 @@ public class CameraController {
         mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
     }
 
-    public void stopRecordingVideo() {
+    public void stopRecordingVideo(File file) {
         if (mMediaRecorder != null) {
             mMediaRecorder.stop();
             mMediaRecorder.reset();
         }
+        Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(file.toString(), MediaStore.Images.Thumbnails.MICRO_KIND);
+        ByteArrayOutputStream baos=new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG,100,baos);
+        compressbySample(baos.toByteArray());
         closeSession();
         createCameraPreviewSession();
     }
@@ -512,6 +532,29 @@ public class CameraController {
             mTargetRatio=2f;
         }
         openCamera();
+    }
+
+    public void gotoGallery() {
+        StrictMode.VmPolicy.Builder builder=new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
+        builder.detectFileUriExposure();
+        if (null==mFile){
+            return;
+        }
+        Uri uri = Uri.fromFile(mFile);
+        Intent intent=new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        intent.setDataAndType(uri,"image/jpeg");
+        mActivity.startActivity(intent);
+    }
+
+    public void openFlashMode() {
+        captureRequestBuilder.set(CaptureRequest.FLASH_MODE,CaptureRequest.FLASH_MODE_TORCH);
+        updatePreview();
+    }
+    public void closeFlashMode(){
+        captureRequestBuilder.set(CaptureRequest.FLASH_MODE,CaptureRequest.FLASH_MODE_OFF);
+        updatePreview();
     }
 
     interface CameraControllerInterFaceCallback{

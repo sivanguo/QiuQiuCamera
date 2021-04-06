@@ -3,6 +3,7 @@ package com.example.myapplication;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
@@ -59,6 +60,9 @@ public class MainActivity extends AppCompatActivity implements CameraController.
     private Resources resources;
     private ImageButton sf_btn;
     private ImageButton previve;
+    private ImageButton flash;
+    private boolean flashButton=true;
+    private ImageButton settings;
 
 
     @Override
@@ -77,6 +81,9 @@ public class MainActivity extends AppCompatActivity implements CameraController.
         vdo_btn = findViewById(R.id.vdo_btn);
         sf_btn = findViewById(R.id.img_DX);
         previve = findViewById(R.id.preview_view);
+        flash = findViewById(R.id.img_SG);
+        settings = findViewById(R.id.settings);
+
 
         cc = new CameraController(this,mPreviewView,status,previve);
         cc.setCameraControllerInterFaceCallback(this);
@@ -110,6 +117,35 @@ public class MainActivity extends AppCompatActivity implements CameraController.
                 vdo_btn.setTextColor(Color.WHITE);
                 takePicture.setBackground(resources.getDrawable(R.drawable.camera_btn));
                 cc.v2p(status);
+            }
+        });
+        settings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(MainActivity.this,SetingsActivity.class);
+                boolean flag=cc.isWmFlag();
+                System.out.println("点击前的水印模式为："+flag);
+                Bundle bundle=new Bundle();
+                bundle.putBoolean("WmFlag",flag);
+                intent.putExtra("flag",bundle);
+                startActivity(intent);
+            }
+        });
+        previve.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cc.gotoGallery();
+            }
+        });
+        flash.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (flashButton==true){
+                    cc.openFlashMode();
+                }else {
+                    cc.closeFlashMode();
+                }
+                flashButton=!flashButton;
             }
         });
         vdo_btn.setOnClickListener(new View.OnClickListener() {
@@ -149,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements CameraController.
                         if (mIsRecordingVideo){
                             takePicture.setBackground(resources.getDrawable(R.drawable.video_end_btn));
                             mIsRecordingVideo = false;
-                            cc.stopRecordingVideo();
+                            cc.stopRecordingVideo(mFile);
                             Toast.makeText(MainActivity.this, "录像保存在："+mFile.toString(), Toast.LENGTH_SHORT).show();
                         }else {
                             mFile = new File(MainActivity.this.getExternalFilesDir(null),"test.mp4");
@@ -203,8 +239,14 @@ public class MainActivity extends AppCompatActivity implements CameraController.
         }
     }
 
-
-
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Bundle bundle = intent.getBundleExtra("flag1");
+        boolean wmFlag1 = bundle.getBoolean("WmFlag1");
+        cc.setWmFlag(wmFlag1);
+        System.out.println("返回后的水印模式为： "+cc.isWmFlag());
+    }
 
     private void requestFullScreenActivity() {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -221,4 +263,5 @@ public class MainActivity extends AppCompatActivity implements CameraController.
             }
         });
     }
+
 }
