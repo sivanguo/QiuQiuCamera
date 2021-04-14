@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -33,6 +34,7 @@ import android.os.HandlerThread;
 import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.util.Size;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.TextureView;
 import android.widget.ImageButton;
@@ -48,7 +50,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 
 public class CameraController {
 
@@ -75,6 +79,8 @@ public class CameraController {
     private Bitmap compressBitmap;
     private boolean  WmFlag=true;
     private CaptureRequest.Builder captureRequestBuilder2;
+    private int mPhoneOrientation;
+    private int mSensorOrientation;
 
     public boolean isWmFlag() {
         return WmFlag;
@@ -130,6 +136,7 @@ public class CameraController {
             }
         };
         try {
+            captureRequestBuilder2.set(CaptureRequest.JPEG_ORIENTATION,getJpegRotation(Integer.parseInt(mCameraId),mPhoneOrientation));
             mCaptureSession.capture(captureRequestBuilder2.build(), CaptureCallback, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -162,6 +169,9 @@ public class CameraController {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
+
+        mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+
         StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         Size[] previewSizeMap = map.getOutputSizes(SurfaceTexture.class);
         Size[] videoSizeMap = map.getOutputSizes(MediaRecorder.class);
@@ -322,6 +332,9 @@ public class CameraController {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
+
+        mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+
         StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         Size[] previewSizeMap = map.getOutputSizes(SurfaceTexture.class);
         int screenWidth = getScreenWidth(mActivity.getApplicationContext());
@@ -350,8 +363,28 @@ public class CameraController {
     private void saveImage(ImageReader reader) {
         Image mImage = reader.acquireNextImage();
         ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
-        byte[] bytes = new byte[buffer.remaining()];
-        buffer.get(bytes);
+        byte[] bytess = new byte[buffer.remaining()];
+        buffer.get(bytess);
+
+        Bitmap bitmapStart = BitmapFactory.decodeByteArray(bytess, 0, bytess.length);
+
+
+        Matrix matrix=new Matrix();
+        matrix.postRotate(getJpegRotation(Integer.parseInt(mCameraId),mPhoneOrientation));
+        if (lenFaceFront()) {
+            matrix.postScale(-1,1);
+        }
+        Bitmap b = Bitmap.createBitmap(bitmapStart, 0, 0, bitmapStart.getWidth(), bitmapStart.getHeight()
+                , matrix, true);
+
+
+
+        ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+        b.compress(Bitmap.CompressFormat.JPEG, 100, baos1);
+        byte[] bytes = baos1.toByteArray();
+
+
+
         FileOutputStream outputStream = null;
         compressbySample(bytes);
         try {
@@ -387,7 +420,7 @@ public class CameraController {
         Bitmap bitmap1 = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas=new Canvas(bitmap1);
         canvas.drawBitmap(bitmap,0,0,null);
-        canvas.drawText("1111111111",100,100,mPaint);
+        canvas.drawText(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()),100,100,mPaint);
         return bitmap1;
     }
     public void compressbySample(byte[] bytes){
@@ -515,6 +548,7 @@ public class CameraController {
         mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
         mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mMediaRecorder.setOrientationHint(getJpegRotation(Integer.parseInt(mCameraId),mPhoneOrientation));
         mMediaRecorder.prepare();
     }
 
@@ -544,7 +578,12 @@ public class CameraController {
         Uri uri = Uri.fromFile(mFile);
         Intent intent=new Intent();
         intent.setAction(Intent.ACTION_VIEW);
-        intent.setDataAndType(uri,"image/jpeg");
+        if (status==Status.RECORD){
+            intent.setDataAndType(uri,"video/mpeg_4");
+        }else {
+            intent.setDataAndType(uri,"image/jpeg");
+        }
+
         mActivity.startActivity(intent);
     }
 
@@ -555,6 +594,47 @@ public class CameraController {
     public void closeFlashMode(){
         captureRequestBuilder.set(CaptureRequest.FLASH_MODE,CaptureRequest.FLASH_MODE_OFF);
         updatePreview();
+    }
+
+    public void setPhoneDeviceDegree(int mPO) {
+        mPhoneOrientation=mPO;
+    }
+    public int getJpegRotation(int cameraId, int orientation) {
+        int rotation = 0;
+        if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+            orientation = 0;
+        }
+        if (cameraId == -1) {
+            cameraId = 0;
+        }
+        CameraCharacteristics cameraInfo = null;
+        try {
+            cameraInfo = manager.getCameraCharacteristics(String.valueOf(cameraId));
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        if (cameraInfo.get(CameraCharacteristics.LENS_FACING) ==
+                CameraCharacteristics.LENS_FACING_FRONT) {//front camera
+            rotation = (mSensorOrientation - orientation + 360) % 360;
+        } else {// back-facing camera
+            rotation = (mSensorOrientation + orientation + 360) % 360;
+        }
+        return rotation;
+    }
+    public boolean lenFaceFront() {
+        CameraCharacteristics cameraInfo = null;
+        try {
+            cameraInfo = manager.getCameraCharacteristics(mCameraId);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        if (cameraInfo.get(CameraCharacteristics.LENS_FACING) ==
+                CameraCharacteristics.LENS_FACING_FRONT) {//front camera
+            return true;
+        }
+
+        return false;
     }
 
     interface CameraControllerInterFaceCallback{

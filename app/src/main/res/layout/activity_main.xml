@@ -49,10 +49,12 @@
 
         <TextView
             android:id="@+id/num"
-            android:layout_width="159dp"
-            android:layout_height="200dp"
-            android:textColor="@color/black"
-            android:textSize="100dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="@color/red"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:textSize="200dp"
             android:paddingLeft="50dp"
             />
         <ImageButton
