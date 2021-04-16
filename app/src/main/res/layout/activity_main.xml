@@ -14,44 +14,55 @@
         android:layout_height="match_parent"
         android:background="@color/black">
 
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-        <com.example.myapplication.AutoFitTextureView
-            android:id="@+id/textureV"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            />
+            <com.example.myapplication.AutoFitTextureView
+                android:id="@+id/textureV"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+        </FrameLayout>
 
 
-        <ImageButton
+        <com.example.myapplication.TwoStateSwitch
             android:id="@+id/img_time"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="@mipmap/timer"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_alignParentLeft="true"
-            />
+            android:layout_marginLeft="50dp"
+            android:layout_marginTop="10dp"
+            app:imageOn="@mipmap/timer_end"
+            app:imageOff="@mipmap/timer"/>
 
-        <ImageButton
+        <com.example.myapplication.TwoStateSwitch
             android:id="@+id/img_DX"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="@mipmap/dx"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_centerHorizontal="true"
-            />
+            android:layout_marginTop="10dp"
+            app:imageOn="@mipmap/dx_cheched"
+            app:imageOff="@mipmap/dx" />
 
-        <ImageButton
+
+        <com.example.myapplication.TwoStateSwitch
             android:id="@+id/img_SG"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="@mipmap/sd"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_alignParentRight="true"
-            />
+            android:layout_marginRight="50dp"
+            android:layout_marginTop="10dp"
+            app:imageOn="@mipmap/sd"
+            app:imageOff="@mipmap/sd_end"/>
+
 
         <TextView
             android:id="@+id/num"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:textColor="@color/red"
+            android:textColor="@color/green"
             android:layout_centerInParent="true"
             android:gravity="center"
             android:textSize="200dp"
@@ -59,8 +70,8 @@
             />
         <ImageButton
             android:id="@+id/settings"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:background="@mipmap/settings"
             android:layout_alignParentRight="true"
             android:layout_marginTop="100dp"
@@ -70,7 +81,7 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="150dp"
+            android:layout_height="200dp"
             android:layout_alignParentBottom="true"
             android:background="@color/black2">
             <RelativeLayout
@@ -113,22 +124,22 @@
 
             <ImageButton
                 android:id="@+id/img_chg"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
                 android:background="@mipmap/roll"
                 android:layout_alignParentBottom="true"
                 android:layout_marginLeft="50dp"
-                android:layout_marginBottom="40dp"
+                android:layout_marginBottom="80dp"
                 />
-        <Button
-            android:id="@+id/takePicture"
-            android:layout_width="70dp"
-            android:layout_height="70dp"
-            android:background="@drawable/camera_btn"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginBottom="40dp"
-            />
+            <Button
+                android:id="@+id/takePicture"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:background="@drawable/camera_btn"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:layout_marginBottom="80dp"
+                />
 
             <ImageButton
                 android:id="@+id/preview_view"
@@ -138,7 +149,7 @@
                 android:layout_alignParentBottom="true"
                 android:layout_alignParentRight="true"
                 android:layout_marginRight="50dp"
-                android:layout_marginBottom="40dp"
+                android:layout_marginBottom="85dp"
                 />
 
 

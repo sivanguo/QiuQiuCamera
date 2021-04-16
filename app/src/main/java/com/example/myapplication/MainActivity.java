@@ -28,7 +28,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 
-public class MainActivity extends AppCompatActivity implements CameraController.CameraControllerInterFaceCallback {
+public class MainActivity extends AppCompatActivity implements CameraController.CameraControllerInterFaceCallback,TwoStateSwitch.SwitchStatusCheckListener, View.OnClickListener {
     private TextureView.SurfaceTextureListener mSurfaceTextureListner=new TextureView.SurfaceTextureListener(){
 
         @Override
@@ -62,17 +62,19 @@ public class MainActivity extends AppCompatActivity implements CameraController.
     private Button pho_btn;
     private TextView num;
     private ImageButton chg_btn;
-    private ImageButton timbtn;
+    private TwoStateSwitch timbtn;
     private Resources resources;
-    private ImageButton sf_btn;
+    private TwoStateSwitch sf_btn;
     private ImageButton previve;
-    private ImageButton flash;
+    private TwoStateSwitch flash;
     private boolean flashButton=true;
     private ImageButton settings;
     public static final int ORIENTATION_HYSTERESIS = 5;
     private int mPhoneOrientation;
     private MyOrientationEventListener mOrientationListener;
     private ValueAnimator valueAnimator;
+    private Button human;
+    private Button night;
 
 
     @Override
@@ -95,137 +97,40 @@ public class MainActivity extends AppCompatActivity implements CameraController.
         previve = findViewById(R.id.preview_view);
         flash = findViewById(R.id.img_SG);
         settings = findViewById(R.id.settings);
+        human = findViewById(R.id.human_btn);
+        night = findViewById(R.id.night_btn);
 
 
         cc = new CameraController(this,mPreviewView,status,previve);
         cc.setCameraControllerInterFaceCallback(this);
 
 
-//        handler = new Handler(){
-//            @Override
-//            public void handleMessage(@NonNull Message msg) {
-//                if (msg.what==0x01){
-//                    num.setText(msg.arg1+"");
-//                    if(msg.arg1==0){
-//                        num.setText("");
-//                        cc.beginTackPicture();
-//                    }
-//                }
-//            }
-//        };
-        sf_btn.setOnClickListener(new View.OnClickListener() {
+        handler = new Handler(){
             @Override
-            public void onClick(View v) {
-                ObjectAnim(sf_btn);
-                cc.daXiaoGaiBian();
-            }
-        });
-        pho_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                status=Status.PHOTOGRAPH;
-                sf_btn.setVisibility(View.VISIBLE);
-                pho_btn.setBackground(resources.getDrawable(R.drawable.select_btn));
-                pho_btn.setTextColor(Color.BLACK);
-                vdo_btn.setBackgroundColor(resources.getColor(R.color.white2));
-                vdo_btn.setTextColor(Color.WHITE);
-                takePicture.setBackground(resources.getDrawable(R.drawable.camera_btn));
-                cc.v2p(status);
-            }
-        });
-        settings.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ObjectAnim(settings);
-                Intent intent=new Intent(MainActivity.this,SetingsActivity.class);
-                boolean flag=cc.isWmFlag();
-                System.out.println("点击前的水印模式为："+flag);
-                Bundle bundle=new Bundle();
-                bundle.putBoolean("WmFlag",flag);
-                intent.putExtra("flag",bundle);
-                startActivity(intent);
-            }
-        });
-        previve.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                cc.gotoGallery();
-            }
-        });
-        flash.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ObjectAnim(flash);
-                if (flashButton==true){
-                    cc.openFlashMode();
-                }else {
-                    cc.closeFlashMode();
-                }
-                flashButton=!flashButton;
-            }
-        });
-        vdo_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                status=Status.RECORD;
-                sf_btn.setVisibility(View.GONE);
-                takePicture.setBackground(resources.getDrawable(R.drawable.video_start_btn));
-                vdo_btn.setBackground(resources.getDrawable(R.drawable.select_btn));
-                vdo_btn.setTextColor(Color.BLACK);
-                pho_btn.setBackgroundColor(resources.getColor(R.color.white2));
-                pho_btn.setTextColor(Color.WHITE);
-                cc.p2v(status);
-            }
-        });
-        timbtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ObjectAnim(timbtn);
-                status=Status.DELAY_PHOTOGRAPH;
-            }
-        });
-
-
-
-        takePicture.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                switch (status){
-                    case PHOTOGRAPH:
+            public void handleMessage(@NonNull Message msg) {
+                if (msg.what==0x01){
+                    num.setText(msg.arg1+"");
+                    if(msg.arg1==0){
+                        num.setText("");
                         cc.beginTackPicture();
-                        break;
-                    case DELAY_PHOTOGRAPH:
-                        delayPhoto();
-                        valueAnimator.start();
-                        break;
-                    case RECORD:
-                        if (mIsRecordingVideo){
-                            takePicture.setBackground(resources.getDrawable(R.drawable.video_end_btn));
-                            mIsRecordingVideo = false;
-                            cc.stopRecordingVideo(mFile);
-                            Toast.makeText(MainActivity.this, "录像保存在："+mFile.toString(), Toast.LENGTH_SHORT).show();
-                        }else {
-                            mFile = new File(MainActivity.this.getExternalFilesDir(null),"test.mp4");
-                            cc.setVideoPath(mFile);
-                            mIsRecordingVideo=true;
-                            cc.startRecordingVideo();
-                            takePicture.setBackground(resources.getDrawable(R.drawable.video_start_btn));
-                        }
+                    }
                 }
             }
-        });
-        chg_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ObjectAnimator rotation = ObjectAnimator.ofFloat(chg_btn, "rotation", 0f, 360f);
-                rotation.setDuration(1000);
-                rotation.start();
-                cc.changeCameraBtn();
-            }
-        });
+        };
 
+
+        //---------------------------------------------------------------------------------------监听------------------------------------------------------------------
+        sf_btn.setSwitchStatusCheckListener(this);
+        flash.setSwitchStatusCheckListener(this);
+        pho_btn.setOnClickListener(this::onClick);
+        settings.setOnClickListener(this::onClick);
+        previve.setOnClickListener(this::onClick);
+        vdo_btn.setOnClickListener(this::onClick);
+        timbtn.setSwitchStatusCheckListener(this);
+        takePicture.setOnClickListener(this::onClick);
+        chg_btn.setOnClickListener(this::onClick);
     }
+    //----------------------------------------------------------------------------------监听结束--------------------------------------------------------------------------------
 
     public void ObjectAnim(View o){
         ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(o, "scaleY", 1f, 3f, 1f);
@@ -238,40 +143,26 @@ public class MainActivity extends AppCompatActivity implements CameraController.
     }
 
     public void delayPhoto(){
-//        if (thread==null||!thread.isAlive()){
-//            thread=new Thread(){
-//                @Override
-//                public void run() {
-//                    for (int i=9;i>=0;i--){
-//                        try {
-//                            Message me=handler.obtainMessage();
-//                            me.what=0x01;
-//                            me.arg1=i;
-//                            handler.sendMessage(me);
-//                            sleep(1000);
-//                            System.out.println(i);
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//            };
-//            thread.start();
-//        }
-        valueAnimator = ValueAnimator.ofInt(10, 0);
-        valueAnimator.setDuration(10000);
-        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                String s = valueAnimator.getAnimatedValue().toString();
-                num.setText(s+"");
-                if (s=="0"||"0".equals(s)){
-                    num.setText("");
-                    cc.beginTackPicture();
+        if (thread==null||!thread.isAlive()){
+            thread=new Thread(){
+                @Override
+                public void run() {
+                    for (int i=9;i>=0;i--){
+                        try {
+                            Message me=handler.obtainMessage();
+                            me.what=0x01;
+                            me.arg1=i;
+                            handler.sendMessage(me);
+                            sleep(1000);
+                            System.out.println(i);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
-            }
-        });
-
+            };
+            thread.start();
+        }
     }
 
     @Override
@@ -308,6 +199,111 @@ public class MainActivity extends AppCompatActivity implements CameraController.
                 takePicture.setBackground(resources.getDrawable(R.drawable.video_end_btn));
             }
         });
+    }
+
+    @Override
+    public void ViewCheckOnMethod(int viewId) {
+        switch (viewId){
+            case R.id.img_SG:
+                cc.openFlashMode();
+                break;
+            case R.id.img_time:
+                status=Status.DELAY_PHOTOGRAPH;
+                break;
+            case R.id.img_DX:
+                cc.daXiaoGaiBian();
+                break;
+
+        }
+    }
+
+    @Override
+    public void ViewCheckOffMethod(int viewId) {
+        switch (viewId){
+            case R.id.img_SG:
+                cc.closeFlashMode();
+                break;
+            case R.id.img_time:
+                status=Status.PHOTOGRAPH;
+                break;
+            case R.id.img_DX:
+                cc.daXiaoGaiBian();
+                break;
+        }
+
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.human_btn:
+                break;
+            case R.id.night_btn:
+                break;
+            case R.id.pho_btn:
+                                status=Status.PHOTOGRAPH;
+                                sf_btn.setVisibility(View.VISIBLE);
+                                pho_btn.setBackground(resources.getDrawable(R.drawable.select_btn));
+                                pho_btn.setTextColor(Color.BLACK);
+                                vdo_btn.setBackgroundColor(resources.getColor(R.color.white2));
+                                vdo_btn.setTextColor(Color.WHITE);
+                                takePicture.setBackground(resources.getDrawable(R.drawable.camera_btn));
+                                cc.v2p(status);
+                break;
+            case R.id.vdo_btn:
+                                status=Status.RECORD;
+                                sf_btn.setVisibility(View.GONE);
+                                takePicture.setBackground(resources.getDrawable(R.drawable.video_start_btn));
+                                vdo_btn.setBackground(resources.getDrawable(R.drawable.select_btn));
+                                vdo_btn.setTextColor(Color.BLACK);
+                                pho_btn.setBackgroundColor(resources.getColor(R.color.white2));
+                                pho_btn.setTextColor(Color.WHITE);
+                                cc.p2v(status);
+                break;
+            case R.id.settings:
+                                ObjectAnim(settings);
+                                Intent intent=new Intent(MainActivity.this,SetingsActivity.class);
+                                boolean flag=cc.isWmFlag();
+                                System.out.println("点击前的水印模式为："+flag);
+                                Bundle bundle=new Bundle();
+                                bundle.putBoolean("WmFlag",flag);
+                                intent.putExtra("flag",bundle);
+                                startActivity(intent);
+                break;
+            case R.id.preview_view:
+                                cc.gotoGallery();
+                break;
+            case R.id.img_chg:
+                                ObjectAnimator rotation = ObjectAnimator.ofFloat(chg_btn, "rotation", 0f, 360f);
+                                rotation.setDuration(1000);
+                                rotation.start();
+                                cc.changeCameraBtn();
+                break;
+            case R.id.takePicture:
+                                switch (status){
+                                    case PHOTOGRAPH:
+                                        cc.beginTackPicture();
+                                        break;
+                                    case DELAY_PHOTOGRAPH:
+                                        delayPhoto();
+                                        break;
+                                    case RECORD:
+                                        if (mIsRecordingVideo){
+                                            takePicture.setBackground(resources.getDrawable(R.drawable.video_end_btn));
+                                            mIsRecordingVideo = false;
+                                            cc.stopRecordingVideo(mFile);
+                                            Toast.makeText(MainActivity.this, "录像保存在："+mFile.toString(), Toast.LENGTH_SHORT).show();
+                                        }else {
+                                            mFile = new File(MainActivity.this.getExternalFilesDir(null),"test.mp4");
+                                            cc.setVideoPath(mFile);
+                                            mIsRecordingVideo=true;
+                                            cc.startRecordingVideo();
+                                            takePicture.setBackground(resources.getDrawable(R.drawable.video_start_btn));
+                                        }
+                                }
+                break;
+
+        }
     }
 
 
